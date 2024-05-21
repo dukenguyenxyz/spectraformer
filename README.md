@@ -8,18 +8,18 @@
 *Spectraformer* a unified random feature framework for transformer for approximating and learning the kernel function in linearized attention of the Transformer. It allows for the combination of any weight matrix with any component function. This repository is the official implementation of Spectraformer
 
 <!-- ![spectraformer framework](./resources/framework.png) -->
-<img src="./resources/framework.png" alt="spectraformer framework">
+<img src="resources/framework.png" alt="spectraformer framework">
 
 ## Features
 Spectraformer evaluates different combinations of weight matrices and component functions in the Transformer in three textual tasks in the LRA benchmark.
 
 The component functions we currently cover are checked by green ticks
 <!-- ![spectraformer component functions](./resources/component_functions.png) -->
-<img src="./resources/component_functions.png" alt="spectraformer component functions">
+<img src="resources/component_functions.png" alt="spectraformer component functions">
 
 The weight matrices we currently cover are checked by green ticks
 <!-- ![spectraformer weight matrices](./resources/weight_matrices.png) -->
-<img src="./resources/weight_matrices.png" alt="spectraformer weight matrices">
+<img src="resources/weight_matrices.png" alt="spectraformer weight matrices">
 
 ## Installation
 
