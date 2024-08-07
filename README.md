@@ -101,33 +101,54 @@ To run experiments on GCP
 pip install --upgrade google-cloud-storage
 
 python main.py --mode eval --attn skyformer --task lra-text --bucket_name kernelized-transformer-code --blob_path kernelized-transformer/data/lra_processed
-
-python main.py --mode eval --random 792 --attn performer --feat orf --kernel_type geomrf --task glue-cola
 ```
+
+## Research
+To incorporation a new component function or weight matrix, please satisfy the following requirement and follow the instruction.
+
+### Component Function
+
+**Requirement**: Component function `f` must satisfy $\mathbb{E}_\omega[f(x)f(y)] = K(x,y)$
+
+**Code implementation**
+- Add the new component function `f` to `src/models/component_functions.py`, the arguments should include data (the input), and other optional parameters.
+- Import `f` and add a new entry to `FastAttention.comp_functions[f_name] = f` in `src/models/attention_performer.py` (line 176)
+
+### Weight Matrix
+
+**Requirement**: Weight matrix `W` must either be an approximator or a learner, as an approximator. As an approximator, it must provide unbiased or nearly unbiased estimation of a kernel k i.e., 
+
+$$\mathbb{E}_\omega[f(x)f(y)] = K(x,y), W = [\omega_1, .. \omega_s]^T, f = TrigRF$$
+
+A learner simply needs to parameterize a distribution `p`.
+
+**Code implementation**
+- Add the new weight matrix w to `src/models/weight_matrix_approx.py` or `src/models/weight_matrix_learner.py`, the arguments should include `nb_rows` (number of rows), `nb_cols` (number of columns) and `device`.
+- Import `w` and add the if clause and `w` function call in `src/models/attention_performer.py` (line 208)
 
 ## Algorithms
 
-|                             |                   | Accuracy (%) |           |           |           | Time (hour) |          |          |          | Memory (GB) |          |          |          |
-|-----------------------------|:-----------------:|:------------:|:---------:|:---------:|:---------:|:-----------:|:--------:|:--------:|:--------:|:-----------:|:--------:|:--------:|:--------:|
-| Paper                       |       Model       |       L      |     T     |     R     |     Mu    |      L      |     T    |     R    |    Mu    |      L      |     T    |     R    |    Mu    |
-| _Choromanski et al. 2021_   |    _PosRF-ORF_    |    _37.35_   |  _61.60_  |  _80.53_  |  _59.83_  |    _1.30_   |  _2.84_  |  _2.89_  |  _2.34_  |    _1.17_   |  _2.31_  |  _2.10_  |  _1.86_  |
-|                             |     PosRF-SORF    |     22.98    |   63.31   |   65.52   |   50.60   |     1.29    |   2.81   |   2.83   |   2.31   |     1.17    |   2.31   |   2.10   |   1.86   |
-|                             |     PosRF-QMC     |     37.50    |   60.41   |   80.71   |   59.54   |     1.30    |   2.84   |   2.89   |   2.34   |     1.17    |   2.31   |   2.10   |   1.86   |
-|                             |     PosRF-SGQ     |     37.45    |   62.68   |   78.37   |   59.50   |     1.30    |   2.83   |   2.89   |   2.34   |     1.17    |   2.31   |   2.10   |   1.86   |
-| **This paper**              |    **PosRF-MM**   |   **38.05**  | **61.85** | **80.67** | **60.19** |   **1.31**  | **2.84** | **2.89** | **2.35** |   **1.17**  | **2.31** | **2.10** | **1.86** |
-| _Chowdhury et al. 2022_     | _PosRF-FastFoodL_ |    _24.95_   |  _64.76_  |  _76.37_  |  _55.36_  |    _2.69_   |  _5.59_  |  _5.61_  |  _4.63_  |    _0.78_   |  _1.56_  |  _1.53_  |  _1.29_  |
-| _Likhosherstov et al. 2022_ |     _OPRF-ORF_    |    _37.50_   |  _59.35_  |  _80.90_  |  _59.25_  |    _1.61_   |  _3.45_  |  _3.50_  |  _2.86_  |    _1.36_   |  _2.71_  |  _2.56_  |  _2.21_  |
-|                             |     OPRF-SORF     |     32.11    |   64.34   |   77.47   |   57.97   |     1.57    |   3.37   |   3.41   |   2.78   |     1.36    |   2.71   |   2.56   |   2.21   |
-|                             |      OPRF-QMC     |     38.41    |   60.32   |   80.80   |   59.84   |     1.61    |   3.46   |   3.51   |   2.86   |     1.36    |   2.71   |   2.56   |   2.21   |
-|                             |      OPRF-MM      |     38.71    |   60.39   |   80.45   |   59.85   |     1.61    |   3.46   |   3.51   |   2.86   |     1.36    |   2.71   |   2.56   |   2.21   |
-|                             |      OPRF-SGQ     |     22.53    |   61.34   |   79.29   |   54.39   |     1.60    |   3.45   |   3.47   |   2.84   |     1.36    |   2.71   |   2.56   |   2.21   |
-|                             |   OPRF-FastFoodL  |     37.40    |   64.04   |   78.32   |   59.92   |     2.81    |   5.84   |   5.86   |   4.84   |     0.85    |   1.69   |   1.67   |   1.40   |
-| _Likhosherstov et al. 2023_ |    _SADERF-ORF_   |    _37.35_   |  _61.37_  |  _80.87_  |  _59.86_  |    _1.61_   |  _3.52_  |  _3.58_  |  _2.90_  |    _1.44_   |  _2.86_  |  _2.69_  |  _2.33_  |
-|                             |    SADERF-SORF    |     32.31    |   64.49   |   76.43   |   57.74   |     1.58    |   3.44   |   3.49   |   2.84   |     1.44    |   2.86   |   2.69   |   2.33   |
-|                             |     SADERF-QMC    |     37.70    |   59.89   |   80.65   |   59.41   |     1.61    |   3.52   |   3.58   |   2.90   |     1.44    |   2.86   |   2.69   |   2.33   |
-|                             |     SADERF-MM     |     38.00    |   60.80   |   80.48   |   59.76   |     1.61    |   3.52   |   3.58   |   2.90   |     1.44    |   2.86   |   2.69   |   2.33   |
-|                             |     SADERF-SGQ    |     36.79    |   63.55   |   77.31   |   59.22   |     1.61    |   3.52   |   3.57   |   2.90   |     1.44    |   2.86   |   2.69   |   2.33   |
-|                             |  SADERF-FastFoodL |     28.63    |   64.64   |   77.61   |   56.96   |     2.81    |   5.89   |   5.92   |   4.87   |     0.92    |   1.83   |   1.79   |   1.51   |
+|                  |              | Accuracy (\%) $\uparrow$ |              |       |      | Time (hour) $\downarrow$ |      |       |      | Memory (GB) $\downarrow$ |      |       |
+|------------------|:------------:|:------------------------:|:------------:|:-----:|:----:|:------------------------:|:----:|:-----:|:----:|:------------------------:|:----:|:-----:|
+|                  |       L      |             T            |       R      | $\mu$ |   L  |             T            |   R  | $\mu$ |   L  |             T            |   R  | $\mu$ |
+| OPRF-FastFoodL   | 37.55 (0.48) |       64.41 (0.62)       | 77.70 (0.33) | 59.89 | 1.07 |           2.07           | 2.12 |  1.75 | 0.86 |           1.72           | 1.68 |  1.42 |
+| OPRF-MM          | 38.08 (0.53) |       60.40 (0.85)       | 81.09 (0.18) | 59.86 | 0.68 |           1.26           | 1.24 |  1.06 | 1.36 |           2.71           | 2.56 |  2.21 |
+| PosRF-MM         | 37.06 (0.37) |       61.87 (1.79)       | 80.58 (0.53) | 59.84 | 0.56 |           1.05           | 1.06 |  0.89 | 1.17 |           2.31           | 2.10 |  1.86 |
+| OPRF-ORF         | 38.34 (0.22) |       60.16 (0.79)       | 80.88 (0.17) | 59.80 | 0.68 |           1.26           | 1.25 |  1.06 | 1.36 |           2.71           | 2.56 |  2.21 |
+| SADERF-QMC       | 37.37 (0.38) |       61.14 (1.48)       | 80.84 (0.11) | 59.78 | 0.68 |           1.25           | 1.29 |  1.07 | 1.44 |           2.86           | 2.69 |  2.33 |
+| PosRF-QMC        | 37.11 (0.09) |       61.69 (0.96)       | 80.55 (0.13) | 59.78 | 0.56 |           1.05           | 1.05 |  0.89 | 1.17 |           2.31           | 2.10 |  1.86 |
+| SADERF-MM        | 37.10 (0.22) |       60.68 (1.88)       | 81.13 (0.17) | 59.64 | 0.68 |           1.25           | 1.29 |  1.07 | 1.44 |           2.86           | 2.69 |  2.33 |
+| SADERF-ORF       | 37.10 (0.19) |       60.39 (2.08)       | 81.05 (0.22) | 59.51 | 0.68 |           1.25           | 1.28 |  1.07 | 1.44 |           2.86           | 2.69 |  2.33 |
+| OPRF-QMC         | 37.69 (0.62) |       59.94 (0.59)       | 80.38 (0.49) | 59.34 | 0.68 |           1.26           | 1.26 |  1.07 | 1.36 |           2.71           | 2.56 |  2.21 |
+| SADERF-SGQ       | 37.11 (0.21) |       62.46 (0.54)       | 78.38 (0.25) | 59.32 | 0.68 |           1.25           | 1.27 |  1.07 | 1.44 |           2.86           | 2.69 |  2.33 |
+| SADERF-FastFoodL | 36.02 (1.38) |       64.63 (0.18)       | 76.99 (0.61) | 59.21 | 1.07 |           2.08           | 2.16 |  1.77 | 0.92 |           1.84           | 1.80 |  1.52 |
+| OPRF-SGQ         | 37.10 (0.23) |       61.25 (0.54)       | 78.69 (0.54) | 59.01 | 0.67 |           1.26           | 1.25 |  1.06 | 1.36 |           2.71           | 2.56 |  2.21 |
+| PosRF-ORF        | 34.35 (5.96) |       60.30 (0.97)       | 80.45 (0.22) | 58.37 | 0.56 |           1.05           | 1.06 |  0.89 | 1.17 |           2.31           | 2.10 |  1.86 |
+| PosRF-FastFoodL  | 33.46 (3.70) |       64.65 (0.36)       | 76.95 (0.48) | 58.35 | 1.02 |           1.98           | 2.03 |  1.68 | 0.79 |           1.57           | 1.53 |  1.30 |
+| SADERF-SORF      | 33.30 (0.98) |       64.70 (0.36)       | 74.71 (1.90) | 57.57 | 0.68 |           1.24           | 1.28 |  1.07 | 1.44 |           2.86           | 2.69 |  2.33 |
+| PosRF-SGQ        | 28.64 (7.54) |       62.38 (0.53)       | 78.28 (0.20) | 56.43 | 0.56 |           1.05           | 1.05 |  0.89 | 1.17 |           2.31           | 2.10 |  1.86 |
+| OPRF-SORF        | 27.91 (3.26) |       64.76 (0.66)       | 75.92 (1.74) | 56.20 | 0.67 |           1.26           | 1.24 |  1.06 | 1.36 |           2.71           | 2.56 |  2.21 |
+| PosRF-SORF       | 21.27 (6.65) |       62.99 (0.40)       | 67.10 (1.11) | 50.45 | 0.56 |           1.05           | 1.05 |  0.89 | 1.17 |           2.31           | 2.10 |  1.86 |
 
 
 **References**
